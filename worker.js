@@ -1,17 +1,15 @@
 'use strict';
 
+const chalk = require('chalk')
+
 const queue = require('./core/kue')
 
-console.log('WORKER CONNECTED');
+console.log(chalk.hex('#009688')(' [*] Worker connected.'))
 
-queue.process('mytype', (job, done) => {
-  sleep(5);
-  console.log('WORKER JOB COMPLETE');
-  switch (job.data.letter) {
-    case 'a':
-      done(null, 'apple');
-      break;
-    default:
-      done(null, 'unknown');
-  }
+queue.process('toto', function(job, done){
+	toto(job.data, done);
 });
+
+function toto(data, done) {
+	console.log("executing job" + data)
+}

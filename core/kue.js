@@ -11,10 +11,6 @@ const queue = kue.createQueue({
   }
 });
 
-queue.on('ready', () => {
-	console.log(chalk.hex('#009688')(' [*] Kue: Ready.'))
-});
-
 queue.on('error', (err) => {
   console.log('There was an error in the main queue!');
   console.log(err);
@@ -23,5 +19,12 @@ queue.on('error', (err) => {
 
 kue.app.listen(process.env.KUE_UI_PORT);
 console.log(chalk.hex('#009688')(' [*] Redis: Connection Succeeded.'))
+
+process.once( 'SIGTERM', function ( sig ) {
+  queue.shutdown( 5000, function(err) {
+    console.log( 'Kue shutdown: ', err||'' );
+    process.exit( 0 );
+  });
+});
 
 module.exports = queue
