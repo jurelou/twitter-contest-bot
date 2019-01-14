@@ -2,7 +2,7 @@
 
 const chalk = require('chalk')
 
-const queue = require('./core/kue')
+const queue = require('core/kue')
 
 console.log(chalk.hex('#009688')(' [*] Worker connected.'))
 

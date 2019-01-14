@@ -4,10 +4,10 @@ const Twit = require('twit')
 const chalk = require('chalk')
 const fs = require('fs');
 
-const bot = require('./worker')
-const kue = require('./core/kue')
-const fifo = require('./core/fifo')
-const search = require('./search')
+const kue = require('core/kue')
+const fifo = require('core/fifo')
+const search = require('src/search')
+const bot = require('src/worker')
 
 class ContestBot {
 

@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "NODE_PATH=. node ./bin/www"
   },
   "dependencies": {
     "chalk": "^2.4.2",
