@@ -42,7 +42,8 @@ module.exports = {
 	tag: [
 		'tag',
 		'your friend',
-		'your friends'
+		'your friends',
+		'identifie'
 	],	
 	message: [
 		'I hope to win this :)',
