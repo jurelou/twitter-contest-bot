@@ -54,12 +54,6 @@ fifo.prototype.push = function (value) {
   return this.add(new Node(this, value))
 }
 
-fifo.prototype.bump = function (node) {
-  if (node.list !== this) return false
-  this.remove(node)
-  this.add(node)
-  return true
-}
 
 fifo.prototype.add = function (node) {
   this.length++

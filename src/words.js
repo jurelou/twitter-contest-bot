@@ -6,15 +6,15 @@ module.exports = {
 		'retweet 2 win',
 		'rt to win',
 		'rt 2 win',
-		//'giveaway',
+		'giveaway',
 		'retweet and win',
 		'retweet and you could win', 
 		'rt for your chance to win',
-		//'giveawayalert',
+		'giveawayalert',
 		'rttowin',
 		'concours',
 		'jeu concours',
-		//'tirage au sort',
+		'tirage au sort',
 		'rt+follow'
 	],
 	retweet: [
