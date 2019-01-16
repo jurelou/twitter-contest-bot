@@ -8,7 +8,6 @@ var job = new Schema({
 	tweet: { type: Schema.Types.ObjectId, ref: 'tweet' },
 	date: { type: Date, default: Date.now },
 	query: String
-
 });
 
 module.exports = mongoose.model('job', job)

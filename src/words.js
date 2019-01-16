@@ -46,9 +46,16 @@ module.exports = {
 		'your friends',
 		'identifie'
 	],	
-	message: [
-		'I hope to win this :)',
-		'I\'m up all night to get lucky !',
-		'I want to enter this giveaway!'
-	]
+	message: {
+		'fr' : [
+			'Je participe !',
+			'On va croiser les doigts',
+			'Que la chance soit avec moi ..'
+			],
+		'en' : [
+			'I hope to win this :)',
+			'I\'m up all night to get lucky !',
+			'I want to enter this giveaway!'
+			]
+	}
 }
