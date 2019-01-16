@@ -4,6 +4,7 @@ var Schema = mongoose.Schema;
 
 var job = new Schema({
 	type: {type: Number, default: 0},
+	tweet_id: String,
 	tweet: { type: Schema.Types.ObjectId, ref: 'tweet' },
 	date: { type: Date, default: Date.now },
 	query: String

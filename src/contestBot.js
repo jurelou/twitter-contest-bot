@@ -28,37 +28,81 @@ class ContestBot {
 		this.tag = 1 << 2; 		// 0100
 	}
 
+	sleep(x) { 
+	  return new Promise(resolve => {
+	    setTimeout(() => {
+	      resolve();
+	    }, x);
+	  });
+	}
+
 	start() {
-		let delay = Math.floor(Math.random() * 12000) + 6000
 		/*
-		words.contests.forEach((word, index) => {
-		  setTimeout(() => {
-			this.searchTweets(word)
-			.catch(err => {
-				console.log(err)
-				return
+		Job.find()
+		.populate('tweet')
+		.exec((err, data) => {
+			data.forEach(elem => {
+
+
+				Job.find({tweet_id: elem.tweet_id})
+				.populate('tweet')
+				.exec((err, el) => {
+					console.log(elem.tweet_id, " @@@ ", el.length)
+				})
 			})
-		  }, 5000)
 		})
+
 		*/
+		
+		let delay = Math.floor(Math.random() * 12000) + 6000
+		delay = 20000000
+		var promise = Promise.resolve();	
+		for (let i = 0; i < words.contests.length; i ++) {
+			this.searchTweets(words.contests[i])
+			console.log("--END---", words.contests[i])
+			this.sleep(delay)
+	
+		}
+		
 	}
 
 	async searchTweets(query) {
 		return new Promise((resolve, reject) => {
-			this.twitter.get('search/tweets', { q: query, count: 15, result_type: 'popular', tweet_mode: 'extended'}, (err, data, response) => {
+			this.twitter.get('search/tweets', { q: query, count: 15, result_type: 'popular', tweet_mode: 'extended'})
+			.then(data => {
+
+
 				if (err) { reject(err) }
-				data.statuses.forEach(tweet => {
-					this.selectTweet(query, tweet).then(selectedTweet => {
-						if (selectedTweet) { 
-							this.addJob(selectedTweet).catch(err => {
-								reject(err)
-							})
-						}
-					})
-					.catch(err => { reject(err) })
-				})
-				resolve()
+				let tweet = data.statuses
+				for (let i = 0; i < tweet.length; i++) {
+					let selectedTweet = await this.selectTweet(tweet[i])
+					if (selectedTweet) { 
+						this.addStat(selectedTweet, query)
+						.catch(err => { reject(err) })							
+						this.addJob(selectedTweet)
+						.catch(err => { reject(err) })
+					}
+				}
+
+
 			})
+			.catch(err => { reject(err) })
+		})
+	}
+
+
+	async selectTweet(tweet) {
+		return new Promise((resolve, reject) => {
+			if (tweet.is_quote_status ||
+				tweet.retweeted_status != undefined){
+				resolve(false)
+			}
+			this.alreadyExists(tweet.id_str)
+			.then(res => {
+				if (res) { resolve(false) }
+				resolve(true)
+			})
+			.catch(err => { reject(err) })
 		})
 	}
 
@@ -66,40 +110,49 @@ class ContestBot {
 		return new Promise((resolve, reject) => {
 			queue.create('tweet', {
 				type: data.type,
-				tweet_id: data.tweet.tweet_id,
+				tweet_id: data.tweet_id,
 				user_id: data.tweet.user_id,
 				mentions: data.tweet.mentions
-			}).save(function(err) {
+			}).save((err) => {
 				if (!err) reject(err)
-				console.log("saving job ", data.tweet.tweet_id)
+				console.log("saving job inQ:", data.tweet)
 				resolve(data)
+			})
+
+
+		})
+	}
+
+	async alreadyExists(id) {
+		return new Promise((resolve, reject) => {
+			Job.find({tweet_id: id}, (err, data) => {
+				if (data.length > 0) { resolve(true) }
+				resolve(false)
+			})
+			.catch(err => {
+				reject(err)
 			})
 		})
 	}
 
-	async selectTweet(query, tweet) {
+	async addStat(tweet, query) {
 		return new Promise((resolve, reject) => {
-			if (tweet.is_quote_status || 
-				tweet.retweeted_status != undefined){ 
-				resolve(false)
-			}
-			let text = tweet.full_text			
+			let text = tweet.full_text
 			text = text.toLowerCase()
 			this.getAllMentions(tweet.entities.user_mentions).then(user_mentions => {
 				let tweetDocument = new Tweet({
 					text: text,
 					mentions: user_mentions,
 					user_id: tweet.user.id_str,
-					tweet_id: tweet.id_str,
 					user_name: tweet.user.name,
 					user_location: tweet.user.location,
 					data: tweet.created_at
 				})
-				tweetDocument.save(err => { 
+				tweetDocument.save(err => {
 					if (err) { reject (err) }
-					console.log("saved tweet ", tweet.id_str)
 					let job = new Job({
 						tweet: tweetDocument,
+						tweet_id: tweet.id_str,
 						query: query,
 						type: 0
 					})
@@ -108,10 +161,10 @@ class ContestBot {
 					job.type = this.wordIsPresent(words.tag, text) ? job.type | this.tag : job.type
 					job.save(err => {
 						if (err) { reject(err) }
-						console.log("job saved ", job._id)
+						console.log("job saved in DB:", job._id)
 						resolve(job)
 					})
-				});
+				})
 			})
 		})
 	}
@@ -125,19 +178,17 @@ class ContestBot {
 		  console.log('value is', node.value)
 		}
 		*/
-	async follow(id) {		
+	async follow(id) {
 		return new Promise((resolve, reject) => {
 			this.twitter.post('friendships/create', { user_id: id }, (err, data, response) => {
 			  if (!err) {
 			  	console.log("followed: ", id)
-
 				fifo.push({a: "a", b:"aaa", c:["a", "a", "a"]})
-
 			  	resolve(data)
 			  }
 			  reject(err)
-			})			
-		})		
+			})
+		})
 	}
 
 	async unfollow(id) {
@@ -150,17 +201,6 @@ class ContestBot {
 			  reject(err)
 			})			
 		})		
-	}
-
-	async createJob(tweet) {
-		return new Promise((resolve, reject) => {
-			kue.create('toto', {  
-			    title: 'Welcome to the site',
-			    to: 'user@example.com',
-			    template: 'welcome-email'
-			}).save();
-			console.log(tweet)
-		})
 	}
 
 	async comment(id) {
@@ -233,7 +273,8 @@ class ContestBot {
 
 	async checkRateLimit() {
 		return new Promise((resolve, reject) => {
-			this.getRateLimit().then(items => {
+			this.getRateLimit()
+			.then(items => {
 				Object.entries(items.resources).forEach(item => {
 					item.forEach(elem => {
 						console.log(elem)
