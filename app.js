@@ -1,5 +1,5 @@
 'use strict';
-require('dotenv').load();
+require('dotenv').load()
 
 const express = require('express')
 const morgan = require('morgan')
@@ -9,18 +9,20 @@ const session = require('express-session')
 const connectRedis = require('connect-redis')
 const helmet = require('helmet')
 
+
 const contestBot = require('src/contestBot.js')
 const routes = require('routes/index')
 //const client = require('./core/redis')
+const mongo = require('core/mongo')
 const kue = require('core/kue')
-const app = express();
+const app = express()
 
-app.use(compression());
-app.use(helmet());
-app.use(cors());
-app.use(morgan('tiny'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(compression())
+app.use(helmet())
+app.use(cors())
+app.use(morgan('tiny'))
+app.use(express.json())
+app.use(express.urlencoded({ extended: false }))
 
 
 /*app.use(session({
@@ -33,9 +35,9 @@ app.use(express.urlencoded({ extended: false }));
 //app.use(passport.initialize());
 //app.use(passport.session());
 
-app.use('/__', routes);
+app.use('/__', routes)
 
 
-new contestBot().start();
+new contestBot().start()
 
 module.exports = app

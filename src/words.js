@@ -36,6 +36,7 @@ module.exports = {
 	favorite: [
 		'fav',
 		'favorite',
+		'favourite',
 		'aime',
 		'like'
 	],
@@ -47,7 +48,7 @@ module.exports = {
 	],	
 	message: [
 		'I hope to win this :)',
-		'I\'m up all night to get lucky',
+		'I\'m up all night to get lucky !',
 		'I want to enter this giveaway!'
 	]
 }

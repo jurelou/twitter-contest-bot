@@ -8,6 +8,8 @@ const bot = require('src/worker')
 const queue = require('core/kue')
 const words = require('src/words')
 const fifo = require('core/fifo')()
+const Job = require('models/job')
+const Tweet = require('models/tweet')
 
 class ContestBot {
 
@@ -21,11 +23,100 @@ class ContestBot {
 		  //strictSSL:            true,     // optional - requires SSL certificates to be valid.
 		})
 		console.log(chalk.hex('#009688')(' [*] Twitter: Connected.'))
+		this.retweet = 1; 		// 0001
+		this.follow = 1 << 1; 	// 0010
+		this.tag = 1 << 2; 		// 0100
 	}
 
 	start() {
-		//this.retweet('1084964203683856384') //my tweet
-		//this.unfollow('8806412') //fnac
+		let delay = Math.floor(Math.random() * 12000) + 6000
+		/*
+		words.contests.forEach((word, index) => {
+		  setTimeout(() => {
+			this.searchTweets(word)
+			.catch(err => {
+				console.log(err)
+				return
+			})
+		  }, 5000)
+		})
+		*/
+	}
+
+	async searchTweets(query) {
+		return new Promise((resolve, reject) => {
+			this.twitter.get('search/tweets', { q: query, count: 15, result_type: 'popular', tweet_mode: 'extended'}, (err, data, response) => {
+				if (err) { reject(err) }
+				data.statuses.forEach(tweet => {
+					this.selectTweet(query, tweet).then(selectedTweet => {
+						if (selectedTweet) { 
+							this.addJob(selectedTweet).catch(err => {
+								reject(err)
+							})
+						}
+					})
+					.catch(err => { reject(err) })
+				})
+				resolve()
+			})
+		})
+	}
+
+	async addJob(data) {
+		return new Promise((resolve, reject) => {
+			queue.create('tweet', {
+				type: data.type,
+				tweet_id: data.tweet.tweet_id,
+				user_id: data.tweet.user_id,
+				mentions: data.tweet.mentions
+			}).save(function(err) {
+				if (!err) reject(err)
+				console.log("saving job ", data.tweet.tweet_id)
+				resolve(data)
+			})
+		})
+	}
+
+	async selectTweet(query, tweet) {
+		return new Promise((resolve, reject) => {
+			if (tweet.is_quote_status || 
+				tweet.retweeted_status != undefined){ 
+				resolve(false)
+			}
+			let text = tweet.full_text			
+			text = text.toLowerCase()
+			this.getAllMentions(tweet.entities.user_mentions).then(user_mentions => {
+				let tweetDocument = new Tweet({
+					text: text,
+					mentions: user_mentions,
+					user_id: tweet.user.id_str,
+					tweet_id: tweet.id_str,
+					user_name: tweet.user.name,
+					user_location: tweet.user.location,
+					data: tweet.created_at
+				})
+				tweetDocument.save(err => { 
+					if (err) { reject (err) }
+					console.log("saved tweet ", tweet.id_str)
+					let job = new Job({
+						tweet: tweetDocument,
+						query: query,
+						type: 0
+					})
+					job.type = this.wordIsPresent(words.retweet, text) ? job.type | this.retweet : job.type
+					job.type = this.wordIsPresent(words.follow, text) ? job.type | this.follow : job.type
+					job.type = this.wordIsPresent(words.tag, text) ? job.type | this.tag : job.type
+					job.save(err => {
+						if (err) { reject(err) }
+						console.log("job saved ", job._id)
+						resolve(job)
+					})
+				});
+			})
+		})
+	}
+
+		/*
 		fifo.push({a: "a", b:"aaa", c:["a", "a", "a"]})
 		fifo.push({a: "b", b:"bbb", c:["b", "b", "b"]})
 		console.log(fifo.length)
@@ -33,60 +124,15 @@ class ContestBot {
 		for (var node = fifo.node; node; node = fifo.next(node)) {
 		  console.log('value is', node.value)
 		}
-		/*
-		words.contests.forEach(word => {
-			this.searchTweets(word)
-		})
 		*/
-
-		var job = queue.create('tweet', {
-		    title: 'welcome email for tj',
-		    name:'lol'
-		}).ttl(600000).save(function(err) {		//10minutes
-		   if( !err ) console.log( job.id );
-		});		
-
-
-	}
-
-	async searchTweets(query) {
-		return new Promise((resolve, reject) => {
-			this.twitter.get('search/tweets', { q: query, count: 10, result_type: 'popular', tweet_mode: 'extended'}, (err, data, response) => {
-				data.statuses.forEach(tweet => {
-					this.selectTweet(tweet)
-				})
-			})
-		})
-	}
-
-	async selectTweet(tweet) {
-		return new Promise((resolve, reject) => {
-			if (tweet.is_quote_status || 
-				tweet.retweeted_status != undefined){ 
-				resolve(false) 
-			}
-			let text = tweet.full_text
-			//let text = tweet.truncated == true ? tweet.extended_tweet.full_text : tweet.text
-			text = text.toLowerCase()
-			this.getAllMentions(text).then(data => {
-				console.log("@@@@@@@@@@@@@@@@")
-				console.log(tweet)
-				console.log("-->",text)
-				console.log("metion---", data)
-				console.log("rt-----", this.wordIsPresent(words.retweet, text))
-				console.log("fw-----", this.wordIsPresent(words.follow, text))
-				console.log("tag----", this.wordIsPresent(words.tag, text))
-
-			})
-			resolve(true)
-		})
-	}
-
-	async follow(id) {
+	async follow(id) {		
 		return new Promise((resolve, reject) => {
 			this.twitter.post('friendships/create', { user_id: id }, (err, data, response) => {
 			  if (!err) {
 			  	console.log("followed: ", id)
+
+				fifo.push({a: "a", b:"aaa", c:["a", "a", "a"]})
+
 			  	resolve(data)
 			  }
 			  reject(err)
@@ -177,13 +223,10 @@ class ContestBot {
 		return ret
 	}
 
-	async getAllMentions(text) {
+	async getAllMentions(mentions) {
 		return new Promise((resolve, reject) => {
-			let text_array = text.trim().split(" ");
 			let res = []
-			text_array.forEach(word => {
-				if (word[0] == '@'){ res.push(word) }
-			})
+			if (mentions) { mentions.forEach(data => { res.push(data.id_str) })}
 			resolve(res)
 		})
 	}
