@@ -2,6 +2,7 @@
 
 const chalk = require('chalk')
 const fs = require('fs');
+const Twit = require('twit')
 
 const bot = require('src/worker')
 const queue = require('core/kue')
@@ -10,23 +11,29 @@ const fifo = require('core/fifo')()
 const Job = require('models/job')
 const Tweet = require('models/tweet')
 const twitterAPI = require('src/twitterAPI')
+const constants = require('src/constants')
 
 class ContestBot {
 
 	constructor() {
-		this.twitter = new twitterAPI()
-		this.retweet = 1;		// 0001
-		this.follow = 1 << 1; 	// 0010
-		this.tag = 1 << 2; 		// 0100
-	}
+		global.twitter = new Twit({
+		  consumer_key:         process.env.TWITTER_API_KEY,
+		  consumer_secret:      process.env.TWITTER_API_KEY_SECRET,
+		  access_token:         process.env.TWITTER_ACCESS_TOKEN,
+		  access_token_secret:  process.env.TWITTER_ACCESS_TOKEN_SECRET,
+		  timeout_ms:           60*1000
+		  //strictSSL:            true,     // optional - requires SSL certificates to be valid.
+		})
+		console.log(chalk.hex('#009688')(' [*] Twitter: Connected.'))
 
+	}
 
 	sleep(milliseconds) {
 	  return new Promise(resolve => setTimeout(resolve, milliseconds))
 	}
 
 	async start() {
-		
+		/*
 		Job.find()
 		.populate('tweet')
 		.exec((err, data) => {
@@ -40,49 +47,56 @@ class ContestBot {
 				})
 			})
 		})
-		
-		/*
-		let delay = Math.floor(Math.random() * 8427) + 4301
-		var promise = Promise.resolve();	
-		
-		for (let i = 0; i < words.contests.length; i ++) {
-			await this.searchTweets(words.contests[i])
-			console.log("--END---", words.contests[i])
-			await this.sleep(delay)
-		}
-
 		*/
 
 
-		console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-		
+		/*
+		var promise = Promise.resolve();			
+		for (let i = 0; i < words.contests.length; i ++) {
+			await this.searchTweets(words.contests[i])
+			console.log("--END---", words.contests[i])
+			await this.sleep(constants.searchDelay)
+		}
+		*/
+	}
+
+
+	updateJob(job) {
+		return new Promise((resolve, reject) => {
+
+
+			Job.findOne({tweet_id: job.tweet_id}, (err, doc) => {
+			    if(err){ reject(err) }
+			    doc.set({type: doc.type | job.type})
+				doc.save((err, updateDoc) => {
+					if (err) { reject(err) }
+					resolve(err)
+				})
+			});
+		})
 	}
 
 	searchTweets(query) {
 		return new Promise((resolve, reject) => {
-			this.twitter.search(query)
+			twitterAPI.search(query)
 			.then(async res => {
 				console.log("(((((  GOT TWEET LIST  )))))")
 				let tweet = res.statuses
 				for (let i = 0; i < tweet.length; i++) {
 					try {
 						let selectedTweet = await this.checkTweet(tweet[i], query)
-						
 						if (selectedTweet) {
 							let stat = await this.addStat(tweet[i], query)
 							await this.addJobs(stat)
 							console.log("JOB: ", tweet[i].id_str, " SELECTED")
 						} else { console.log("JOB: ", tweet[i].id_str, " .....") }
-					} catch (err) {
-						console.log("catch err",err)
-					}
-				}		
+					} catch (err) { reject(err) }
+				}
 				resolve()
 			})
 			.catch(err => { reject(err) })
 		})
 	}
- 
 
 	checkTweet(tweet, query) {
 		return new Promise((resolve, reject) => {
@@ -115,22 +129,28 @@ class ContestBot {
 			if (this.wordIsPresent(words.retweet, data.tweet.text)) {
 				this.addJob({
 					title: 'retweet',
-					type: this.retweet,
+					type: constants.retweet,
 					tweet_id: data.tweet_id
 				}).catch(err => { reject(err) })
 			}
 			if (this.wordIsPresent(words.follow, data.tweet.text)) {
-				this.addJob({
-					title: 'follow',
-					type: this.follow,
-					tweet_id: data.tweet_id,
-					mentions: data.tweet.mentions
-				}).catch(err => { reject(err) })
+				data.tweet.mentions.forEach((user) => {
+
+					this.addJob({
+						title: 'follow',
+						type: constants.follow,
+						tweet_id: data.tweet_id,
+						mention: user
+					}).catch(err => { reject(err) })
+
+
+				})				
+
 			}
 			if (this.wordIsPresent(words.tag, data.tweet.text)) {
 				this.addJob({
 					title: 'tag',					
-					type: this.tag,
+					type: constants.tag,
 					tweet_id: data.tweet_id
 				}).catch(err => { reject(err) })
 			}
@@ -184,9 +204,7 @@ class ContestBot {
 	wordIsPresent(words_array, string) {
 		let ret = false
 		words_array.forEach(word => {
-			if (string.indexOf(word) !== -1) {
-				ret = true
-			}
+			if (string.indexOf(word) !== -1) { ret = true }
 		})
 		return ret
 	}

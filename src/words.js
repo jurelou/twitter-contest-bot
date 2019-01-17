@@ -44,9 +44,19 @@ module.exports = {
 		'tag',
 		'your friend',
 		'your friends',
-		'identifie'
+		'identifie',
+		'in the comments',
+		'dans les commentaires'
 	],	
-	message: {
+	message: [
+		'Je participe !',
+		'On va croiser les doigts',
+		'Que la chance soit avec moi ..',
+		'I hope to win this :)',
+		'I\'m up all night to get lucky !',
+		'I want to enter this giveaway!'
+	],
+	message_tmp: {
 		'fr' : [
 			'Je participe !',
 			'On va croiser les doigts',

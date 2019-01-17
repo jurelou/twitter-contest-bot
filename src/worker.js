@@ -4,15 +4,16 @@ const chalk = require('chalk')
 var kue = require('kue');
 
 const queue = require('core/kue')
+const constants = require('src/constants')
+const twitterAPI = require('src/twitterAPI')
 
 console.log(chalk.hex('#009688')(' [*] Worker connected.'))
 queue.on( 'error', function( err ) {
   console.log( 'Oops... ', err );
 });
 
-queue.process('tweete', function(job, done) {
-	let delay = Math.floor(Math.random() * 960000) + 600000
-	setTimeout(exec, delay, job.data, done);
+queue.process('tweet', function(job, done) {
+	setTimeout(exec, constants.workerDelay, job.data, done);
 });
 
 /*
@@ -29,6 +30,38 @@ queue.process('tweete', function(job, done) {
 			*/
 
 function exec(data, done) {
-	console.log("finished job" + data)
-	done()
+	if (data.type & constants.follow) {
+		twitterAPI.follow(data.mention)
+		.then(res => {
+			done()
+		})
+		.catch(err => {
+			console.log("Worker error:", err)
+			kue.job.failed().error(err)
+			done(err)
+		})
+	}
+	else if (data.type & constants.retweet) {
+		twitterAPI.retweet(data.tweet_id)
+		.then(res => {
+			done()
+		})
+		.catch(err => {
+			console.log("Worker error:", err)
+			kue.job.failed().error(err)
+			done(err)
+		})
+	} else if (data.type & constants.tag) {
+		twitterAPI.comment(data.tweet_id)
+		.then(res => {
+			done()
+		})
+		.catch(err => {
+			console.log("Worker error:", err)
+			kue.job.failed().error(err)
+			done(err)
+		})
+	} else {
+		done()
+	}
 }
