@@ -13,7 +13,7 @@ queue.on( 'error', function( err ) {
 });
 
 queue.process('tweet', function(job, done) {
-	setTimeout(exec, constants.workerDelay, job.data, done);
+	setTimeout(exec, 61637, job.data, done);
 });
 
 /*
@@ -51,7 +51,7 @@ function exec(data, done) {
 			kue.job.failed().error(err)
 			done(err)
 		})
-	} else if (data.type & constants.tag) {
+/*	} else if (data.type & constants.tag) {
 		twitterAPI.comment(data.tweet_id)
 		.then(res => {
 			done()
@@ -61,6 +61,7 @@ function exec(data, done) {
 			kue.job.failed().error(err)
 			done(err)
 		})
+*/
 	} else {
 		done()
 	}

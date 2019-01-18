@@ -48,16 +48,14 @@ class ContestBot {
 			})
 		})
 		*/
-
-
-		/*
+		
 		var promise = Promise.resolve();			
 		for (let i = 0; i < words.contests.length; i ++) {
 			await this.searchTweets(words.contests[i])
 			console.log("--END---", words.contests[i])
 			await this.sleep(constants.searchDelay)
 		}
-		*/
+		
 	}
 
 
