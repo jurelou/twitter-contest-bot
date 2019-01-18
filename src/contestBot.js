@@ -133,18 +133,21 @@ class ContestBot {
 			}
 			if (this.wordIsPresent(words.follow, data.tweet.text)) {
 				data.tweet.mentions.forEach((user) => {
-
 					this.addJob({
 						title: 'follow',
 						type: constants.follow,
 						tweet_id: data.tweet_id,
 						mention: user
 					}).catch(err => { reject(err) })
-
-
 				})				
-
 			}
+			if (this.wordIsPresent(words.favorite, data.tweet.text)) {
+				this.addJob({
+					title: 'fav',	
+					type: constants.favorite,
+					tweet_id: data.tweet_id
+				}).catch(err => { reject(err) })
+			}			
 			if (this.wordIsPresent(words.tag, data.tweet.text)) {
 				this.addJob({
 					title: 'tag',					

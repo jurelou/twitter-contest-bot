@@ -49,23 +49,23 @@ module.exports = {
 		'dans les commentaires'
 	],	
 	message: [
-		'Je participe !',
-		'On va croiser les doigts',
-		'Que la chance soit avec moi ..',
-		'I hope to win this :)',
-		'I\'m up all night to get lucky !',
-		'I want to enter this giveaway!'
+		process.env.FRIEND_ACCOUNT + ' Je participe !',
+		process.env.FRIEND_ACCOUNT + ' On va croiser les doigts',
+		process.env.FRIEND_ACCOUNT + ' Que la chance soit avec moi ..',
+		process.env.FRIEND_ACCOUNT + ' I hope to win this :)',
+		process.env.FRIEND_ACCOUNT + ' I\'m up all night to get lucky !',
+		process.env.FRIEND_ACCOUNT + ' I want to enter this giveaway!'
 	],
 	message_tmp: {
 		'fr' : [
-			'Je participe !',
-			'On va croiser les doigts',
-			'Que la chance soit avec moi ..'
+			' Je participe !',
+			' On va croiser les doigts',
+			' Que la chance soit avec moi ..'
 			],
 		'en' : [
-			'I hope to win this :)',
-			'I\'m up all night to get lucky !',
-			'I want to enter this giveaway!'
+			' I hope to win this :)',
+			' I\'m up all night to get lucky !',
+			' I want to enter this giveaway!'
 			]
 	}
 }

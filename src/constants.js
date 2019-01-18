@@ -5,5 +5,6 @@ module.exports = {
 		workerDelay: Math.floor(Math.random() * 191521) + 91743,
 		retweet: 1,
 		follow: 1 << 1,
-		tag: 1 << 2
+		tag: 1 << 2,
+		favorite: 1 << 3
 }

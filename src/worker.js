@@ -40,8 +40,7 @@ function exec(data, done) {
 			kue.job.failed().error(err)
 			done(err)
 		})
-	}
-	else if (data.type & constants.retweet) {
+	} else if (data.type & constants.retweet) {
 		twitterAPI.retweet(data.tweet_id)
 		.then(res => {
 			done()
@@ -51,8 +50,8 @@ function exec(data, done) {
 			kue.job.failed().error(err)
 			done(err)
 		})
-/*	} else if (data.type & constants.tag) {
-		twitterAPI.comment(data.tweet_id)
+	} else if (data.type & constants.favorite) {
+		twitterAPI.favorite(data.tweet_id)
 		.then(res => {
 			done()
 		})
@@ -61,7 +60,16 @@ function exec(data, done) {
 			kue.job.failed().error(err)
 			done(err)
 		})
-*/
+	} else if (data.type & constants.tag) {
+		twitterAPI.comment(data.tweet_id)
+		.then(res => {
+			done()
+		})
+		.catch(err => {
+			console.log("Worker error:", err)
+			kue.job.failed().error(err)
+			done(err)
+		})		
 	} else {
 		done()
 	}
