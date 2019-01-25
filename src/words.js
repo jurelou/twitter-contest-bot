@@ -1,6 +1,19 @@
 'use strict';
 
 module.exports = {
+	banned_accounts : [
+		'bot spotting',
+		'alwayswinning',
+		'anti bot',
+		'fuckbot'
+	],
+	banned_words : [
+		'follow this link',
+		'click on the',
+		'click to enter',
+		
+		'link instructions'
+	],
 	contests: [
 		'retweet to win',
 		'retweet 2 win',
@@ -18,11 +31,9 @@ module.exports = {
 		'rt+follow'
 	],
 	retweet: [
-		'rt',
+		' rt ',
 		'partage',
 		'retweet',
-		'retw',
-		'retwet'
 	],
 	follow: [
 		'follow',

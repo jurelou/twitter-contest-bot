@@ -4,9 +4,9 @@ const Twit = require('twit')
 const chalk = require('chalk')
 const words = require('src/words')
 module.exports = {
-	search: async (query) => {
+	search: async (query, type) => {
 		return new Promise((resolve, reject) => {
-			twitter.get('search/tweets', { q: query, count: 15, result_type: 'popular', tweet_mode: 'extended'}, (err, data, response) => {
+			twitter.get('search/tweets', { count: 100, q: query, result_type: type, tweet_mode: 'extended'}, (err, data, response) => {
 				if (err) { reject(err) }
 				resolve(data)
 			})
@@ -50,7 +50,7 @@ module.exports = {
 	comment: async (id) => {
 		return new Promise((resolve, reject) => {
 			twitter.get('statuses/show', { id: id }, (err, data, response) => {
-				let msg = '@' + data.user.name + ' ' + words.message[Math.floor(Math.random() * words.message.length)];
+				let msg = '@' + data.user.screen_name + ' ' + words.message[Math.floor(Math.random() * words.message.length)];
 				twitter.post('statuses/update', { status: msg, in_reply_to_status_id: id }, (err, data, response) => {
 					if (!err) {
 						console.log("commented ", id)
@@ -64,8 +64,10 @@ module.exports = {
 
 	retweet: async (id) => {
 		return new Promise((resolve, reject) => {
+			console.log("start retweet");
 			twitter.post('statuses/retweet/:id', { id: id }, (err, data, response) => {
-			  if (!err) {
+			console.log("ended rt")  
+			if (!err) {
 			  	console.log("retweeted ", id)
 			  	resolve(data)
 			  }

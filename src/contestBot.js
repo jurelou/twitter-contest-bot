@@ -50,10 +50,20 @@ class ContestBot {
 		*/
 		
 		var promise = Promise.resolve();			
-		for (let i = 0; i < words.contests.length; i ++) {
-			await this.searchTweets(words.contests[i])
-			console.log("--END---", words.contests[i])
-			await this.sleep(constants.searchDelay)
+		for (let cpt = 0; cpt  < 10000; cpt++) {
+			for (let i = 0; i < words.contests.length; i ++) {
+				let type = ""
+				if (cpt % 2 == 0) {
+					type = "mixed"
+				} else {
+					type = "popular"
+				}
+				await this.searchTweets(words.contests[i], type)
+				console.log("--SEARCHED---", words.contests[i], "--type: ", type)
+				await this.sleep(constants.searchDelay)
+			}
+			console.log("-------FINISHED LOOP ------ ", cpt)
+			await this.sleep(2000000)
 		}
 		
 	}
@@ -74,12 +84,12 @@ class ContestBot {
 		})
 	}
 
-	searchTweets(query) {
+	searchTweets(query, type) {
 		return new Promise((resolve, reject) => {
-			twitterAPI.search(query)
+			twitterAPI.search(query, type)
 			.then(async res => {
-				console.log("(((((  GOT TWEET LIST  )))))")
 				let tweet = res.statuses
+				console.log("(((((  GOT TWEET LIST  )))))", tweet.length)
 				for (let i = 0; i < tweet.length; i++) {
 					try {
 						let selectedTweet = await this.checkTweet(tweet[i], query)
@@ -99,21 +109,29 @@ class ContestBot {
 	checkTweet(tweet, query) {
 		return new Promise((resolve, reject) => {
 			if (tweet.is_quote_status ||
-				tweet.retweeted_status != undefined){
-				resolve(false)
+				tweet.retweeted_status != undefined ||
+				tweet.in_reply_to_status_id){
+				return resolve(false)
 			}
+			
+			if (this.wordIsPresent(words.banned_accounts, tweet.user.screen_name) ||
+				this.wordIsPresent(words.banned_words, tweet.full_text)) {
+				return resolve(false);
+			}
+
 			this.alreadyExists(tweet.id_str)
 			.then(res => {
 				if (res) { resolve(false) }
-				resolve(true)
+				return resolve(true)
 			})
-			.catch(err => { reject(err) })
+			.catch(err => { return reject(err) })
 		})
 	}
 
 	async addJob(data) {
 		return new Promise((resolve, reject) => {
 			queue.create('tweet', data)
+			.ttl(500000)
 			.save((err) => {
 				if (err) reject(err)
 				resolve()
@@ -204,8 +222,9 @@ class ContestBot {
 
 	wordIsPresent(words_array, string) {
 		let ret = false
+		let l_case = string.toLowerCase();
 		words_array.forEach(word => {
-			if (string.indexOf(word) !== -1) { ret = true }
+			if (l_case.indexOf(word) !== -1) { ret = true }
 		})
 		return ret
 	}
